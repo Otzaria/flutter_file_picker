@@ -301,8 +301,8 @@ class FilePickerDarwin extends FilePickerPlatform {
       return Uri.file(savedPath);
     } finally {
       // Also when saving fails, so the app does not stay in the picking state.
-      onFileSaving?.call(FilePickerStatus.done);
       await eventSubscription?.cancel();
+      onFileSaving?.call(FilePickerStatus.done);
     }
   }
 }

@@ -580,6 +580,34 @@ void main() {
       await second;
     });
 
+    test('save cancels its listener before a throwing done callback', () async {
+      var cancellations = 0;
+      messenger.setMockStreamHandler(
+        picker.eventChannel,
+        MockStreamHandler.inline(
+          onListen: (_, _) {},
+          onCancel: (_) => cancellations++,
+        ),
+      );
+      messenger.setMockMethodCallHandler(
+        picker.methodChannel,
+        (_) async => null,
+      );
+
+      await expectLater(
+        picker.saveFile(
+          fileName: 'a.txt',
+          bytes: Uint8List(0),
+          mimeType: 'text/plain',
+          onFileSaving: (status) {
+            if (status == FilePickerStatus.done) throw StateError('callback');
+          },
+        ),
+        throwsStateError,
+      );
+      expect(cancellations, 1);
+    });
+
     test('saveFile reports done when saving fails', () async {
       messenger.setMockMethodCallHandler(picker.methodChannel, (call) async {
         throw PlatformException(code: 'save_failed');
