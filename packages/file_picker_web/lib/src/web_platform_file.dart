@@ -17,8 +17,9 @@ import 'platform_file_web_fetch.dart';
 base class WebPlatformFile extends PlatformFile {
   /// Creates a new [WebPlatformFile] instance.
   ///
-  /// Requires a file [name] and [uri]. Optional parameters include preloaded
-  /// [bytes], a custom [readStream], file size in [bytesLength], or an underlying [xFile].
+  /// Requires [name] and either [uri] or [sourceFile]. Optional parameters
+  /// include preloaded [bytes], a custom [readStream], the file size in
+  /// [bytesLength], and an underlying [xFile].
   WebPlatformFile({
     required this.name,
     Uri? uri,
@@ -112,8 +113,8 @@ base class WebPlatformFile extends PlatformFile {
 
   /// Asynchronously reads the file content as a byte array (`Uint8List`).
   ///
-  /// If bytes are cached or readable from a `blob:`/`data:` URL, they will be
-  /// retrieved directly; otherwise falls back to [xFile].
+  /// Returns cached bytes first, then reads directly from the browser [File]
+  /// when available, and otherwise uses a `blob:` or `data:` URL.
   @override
   Future<Uint8List> readAsBytes() async {
     final bytes = _bytes;
