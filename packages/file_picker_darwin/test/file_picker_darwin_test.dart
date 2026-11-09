@@ -365,6 +365,29 @@ void main() {
       expect(receivedArguments?['initialDirectory'], '/Users/test/Projects');
     });
 
+    test('getDirectoryPath propagates failed entitlement checks', () async {
+      final picker = FilePickerDarwin();
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(picker.methodChannel, (call) async {
+            throw PlatformException(code: 'ENTITLEMENT_REQUIRED_WRITE');
+          });
+      addTearDown(() {
+        TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+            .setMockMethodCallHandler(picker.methodChannel, null);
+      });
+
+      await expectLater(
+        picker.getDirectoryPath(),
+        throwsA(
+          isA<PlatformException>().having(
+            (error) => error.code,
+            'code',
+            'ENTITLEMENT_REQUIRED_WRITE',
+          ),
+        ),
+      );
+    });
+
     test('rejects non-automatic representation with compression', () {
       final picker = FilePickerDarwin();
       const darwinOptions = DarwinOptions(
@@ -450,7 +473,7 @@ void main() {
     });
 
     test(
-      'pickFileAndDirectoryPaths returns an empty list on PlatformException',
+      'pickFileAndDirectoryPaths propagates native failures',
       () async {
         final picker = FilePickerDarwin();
 
@@ -463,9 +486,16 @@ void main() {
               .setMockMethodCallHandler(picker.methodChannel, null);
         });
 
-        final result = await picker.pickFileAndDirectoryPaths();
-
-        expect(result, isEmpty);
+        await expectLater(
+          picker.pickFileAndDirectoryPaths(),
+          throwsA(
+            isA<PlatformException>().having(
+              (error) => error.code,
+              'code',
+              'error',
+            ),
+          ),
+        );
       },
     );
   });
