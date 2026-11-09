@@ -204,9 +204,8 @@ class FilePickerLinux extends FilePickerPlatform {
     }
   }
 
-  /// Waits for the portal's response to the request at [replyPath] and
-  /// returns the chosen paths, or `null` if the user cancelled or the
-  /// request failed.
+  /// Returns the chosen paths, or `null` on user cancellation.
+  /// Abnormal portal responses propagate as errors.
   Future<List<String>?> _awaitPaths(DBusObjectPath replyPath) async {
     final request = OrgFreedesktopPortalRequest(
       client,
