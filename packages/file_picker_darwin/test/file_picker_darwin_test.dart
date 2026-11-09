@@ -523,12 +523,12 @@ void main() {
 
       final firstStatuses = <FilePickerStatus>[];
       final secondStatuses = <FilePickerStatus>[];
-      final first = FilePickerDarwin(viewId: 1).pickFiles(
-        onFileLoading: firstStatuses.add,
-      );
-      final second = FilePickerDarwin(viewId: 2).pickFiles(
-        onFileLoading: secondStatuses.add,
-      );
+      final first = FilePickerDarwin(
+        viewId: 1,
+      ).pickFiles(onFileLoading: firstStatuses.add);
+      final second = FilePickerDarwin(
+        viewId: 2,
+      ).pickFiles(onFileLoading: secondStatuses.add);
 
       firstResponse.complete(null);
       expect(await first, isEmpty);
@@ -538,6 +538,46 @@ void main() {
       secondResponse.complete(null);
       expect(await second, isEmpty);
       expect(secondStatuses.last, FilePickerStatus.done);
+    });
+
+    test('finishing one picker keeps events flowing to the other', () async {
+      final responses = [Completer<Object?>(), Completer<Object?>()];
+      var nextCall = 0;
+      var listenCount = 0;
+      void Function(bool)? emit;
+      messenger.setMockStreamHandler(
+        picker.eventChannel,
+        MockStreamHandler.inline(
+          onListen: (_, events) {
+            listenCount++;
+            emit = (value) => events.success(value);
+          },
+        ),
+      );
+      messenger.setMockMethodCallHandler(
+        picker.methodChannel,
+        (_) => responses[nextCall++].future,
+      );
+      final firstStatuses = <FilePickerStatus>[];
+      final secondStatuses = <FilePickerStatus>[];
+      final first = picker.pickFiles(onFileLoading: firstStatuses.add);
+      final second = FilePickerDarwin(
+        viewId: 2,
+      ).pickFiles(onFileLoading: secondStatuses.add);
+      await pumpEventQueue();
+      expect(listenCount, 1);
+      emit!(true);
+      await pumpEventQueue();
+      expect(firstStatuses, [FilePickerStatus.picking]);
+      expect(secondStatuses, [FilePickerStatus.picking]);
+      responses[0].complete(null);
+      await first;
+      emit!(false);
+      await pumpEventQueue();
+      expect(secondStatuses.last, FilePickerStatus.done);
+      expect(firstStatuses, [FilePickerStatus.picking, FilePickerStatus.done]);
+      responses[1].complete(null);
+      await second;
     });
 
     test('saveFile reports done when saving fails', () async {
