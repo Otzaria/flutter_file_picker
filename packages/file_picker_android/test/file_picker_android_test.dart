@@ -154,6 +154,25 @@ void main() {
         expect(await picker.pickFiles(onFileLoading: (_) {}), isEmpty);
       });
 
+      test('pickFile reports done after cancellation or a channel error', () async {
+        var fail = false;
+        messenger.setMockMethodCallHandler(picker.methodChannel, (call) async {
+          if (fail) throw PlatformException(code: 'pick_failed');
+          return null;
+        });
+
+        final statuses = <FilePickerStatus>[];
+        expect(await picker.pickFiles(onFileLoading: statuses.add), isEmpty);
+        expect(statuses.last, FilePickerStatus.done);
+
+        fail = true;
+        await expectLater(
+          picker.pickFile(onFileLoading: statuses.add),
+          throwsA(isA<PlatformException>()),
+        );
+        expect(statuses.last, FilePickerStatus.done);
+      });
+
       test('saveFile reports done when saving fails', () async {
         messenger.setMockMethodCallHandler(picker.methodChannel, (call) async {
           throw PlatformException(code: 'save_failed');
