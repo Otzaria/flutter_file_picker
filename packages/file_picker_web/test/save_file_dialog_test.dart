@@ -79,6 +79,7 @@ void main() {
 
   final downloads = <String>[];
   final pickerCalls = <Map<Object?, Object?>>[];
+  final savingStatuses = <FilePickerStatus>[];
 
   setUpAll(() {
     FilePickerWeb.registerWith(webPluginRegistrar);
@@ -90,6 +91,7 @@ void main() {
   setUp(() {
     downloads.clear();
     pickerCalls.clear();
+    savingStatuses.clear();
     // Record downloads instead of triggering them.
     _anchorPrototype.click = ((HTMLAnchorElement anchor) {
       downloads.add(anchor.download);
@@ -99,6 +101,7 @@ void main() {
   tearDown(() {
     window.showSaveFilePicker = originalSaveFilePicker;
     _anchorPrototype.click = originalAnchorClick;
+    expect(savingStatuses, isEmpty);
   });
 
   /// Replaces `showSaveFilePicker` with one that records its options and
@@ -123,7 +126,7 @@ void main() {
       fileName: 'report.txt',
       bytes: bytes,
       mimeType: 'text/plain',
-      onFileSaving: onFileSaving,
+      onFileSaving: onFileSaving ?? savingStatuses.add,
       webOptions: saveMode == null
           ? const WebOptions()
           : FilePickerWebOptions(saveMode: saveMode),
@@ -192,7 +195,7 @@ void main() {
     expect(supportsShowSaveFileDialog, isTrue);
   });
 
-  test('empty downloads complete the saving status', () async {
+  test('empty downloads leave Web saving callbacks unused', () async {
     final statuses = <FilePickerStatus>[];
     final uri = await picker.saveFile(
       fileName: 'empty.txt',
@@ -203,7 +206,7 @@ void main() {
 
     expect(uri, isNull);
     expect(downloads, ['empty.txt']);
-    expect(statuses, [FilePickerStatus.picking, FilePickerStatus.done]);
+    expect(statuses, isEmpty);
   });
 
   test('writes an empty file through the native browser dialog', () async {
@@ -223,10 +226,10 @@ void main() {
     expect(handle.writable.written, hasLength(1));
     expect(handle.writable.written.single, isEmpty);
     expect(handle.writable.closed, isTrue);
-    expect(statuses, [FilePickerStatus.picking, FilePickerStatus.done]);
+    expect(statuses, isEmpty);
   });
 
-  test('sends done when the user cancels the browser save dialog', () async {
+  test('cancel leaves Web save callbacks unused', () async {
     stubPickerError('AbortError');
     final statuses = <FilePickerStatus>[];
 
@@ -234,11 +237,11 @@ void main() {
       await save(saveMode: WebSaveFileMode.dialog, onFileSaving: statuses.add),
       isNull,
     );
-    expect(statuses, [FilePickerStatus.picking, FilePickerStatus.done]);
+    expect(statuses, isEmpty);
     expect(downloads, isEmpty);
   });
 
-  test('sends done when the browser does not support the dialog', () async {
+  test('unsupported dialog propagates without Web save callbacks', () async {
     window.showSaveFilePicker = null;
     final statuses = <FilePickerStatus>[];
 
@@ -246,7 +249,7 @@ void main() {
       save(saveMode: WebSaveFileMode.dialog, onFileSaving: statuses.add),
       throwsUnsupportedError,
     );
-    expect(statuses, [FilePickerStatus.picking, FilePickerStatus.done]);
+    expect(statuses, isEmpty);
   });
 
   test('downloads without opening the dialog by default', () async {
@@ -259,24 +262,21 @@ void main() {
   });
 
   for (final failAt in ['createWritable', 'write', 'close']) {
-    test(
-      'sends done when $failAt fails after choosing a destination',
-      () async {
-        final handle = _FakeFileHandle('report.txt', failAt: failAt);
-        stubPicker(() => Future.value(createJSInteropWrapper(handle)).toJS);
-        final statuses = <FilePickerStatus>[];
+    test('preserves $failAt errors without Web save callbacks', () async {
+      final handle = _FakeFileHandle('report.txt', failAt: failAt);
+      stubPicker(() => Future.value(createJSInteropWrapper(handle)).toJS);
+      final statuses = <FilePickerStatus>[];
 
-        await expectLater(
-          save(saveMode: WebSaveFileMode.dialog, onFileSaving: statuses.add),
-          throwsA(anything),
-        );
-        expect(statuses, [FilePickerStatus.picking, FilePickerStatus.done]);
-        expect(downloads, isEmpty);
-      },
-    );
+      await expectLater(
+        save(saveMode: WebSaveFileMode.dialog, onFileSaving: statuses.add),
+        throwsA(anything),
+      );
+      expect(statuses, isEmpty);
+      expect(downloads, isEmpty);
+    });
   }
 
-  test('completes status after falling back to a download', () async {
+  test('fallback downloads without Web save callbacks', () async {
     stubPickerError('SecurityError');
     final statuses = <FilePickerStatus>[];
 
@@ -285,30 +285,26 @@ void main() {
       isNull,
     );
     expect(downloads, ['report.txt']);
-    expect(statuses, [FilePickerStatus.picking, FilePickerStatus.done]);
+    expect(statuses, isEmpty);
   });
 
   test(
-    'completion callback failure follows the completed dialog write',
+    'ignores an unsupported callback without disrupting the dialog write',
     () async {
       final handle = _FakeFileHandle('report.txt');
       stubPicker(() => Future.value(createJSInteropWrapper(handle)).toJS);
       final statuses = <FilePickerStatus>[];
 
-      await expectLater(
-        save(
-          saveMode: WebSaveFileMode.dialog,
-          onFileSaving: (status) {
-            statuses.add(status);
-            if (status == FilePickerStatus.done) {
-              throw StateError('callback failed');
-            }
-          },
-        ),
-        throwsStateError,
+      final uri = await save(
+        saveMode: WebSaveFileMode.dialog,
+        onFileSaving: (status) {
+          statuses.add(status);
+          throw StateError('callback must not run');
+        },
       );
+      expect(uri, Uri(path: 'report.txt'));
       expect(handle.writable.closed, isTrue);
-      expect(statuses, [FilePickerStatus.picking, FilePickerStatus.done]);
+      expect(statuses, isEmpty);
     },
   );
 }
