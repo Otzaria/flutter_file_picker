@@ -37,6 +37,25 @@ void main() {
   File fileWith({required String name, required String content}) =>
       File([utf8.encode(content).toJS].toJS, name);
 
+  test('media picks use a valid comma-separated accept filter', () async {
+    final result = FilePickerPlatform.instance.pickFiles(type: FileType.media);
+    final input = document.querySelector('flt-file-picker-inputs input')!
+        as HTMLInputElement;
+    expect(input.accept, 'video/*,image/*');
+    input.dispatchEvent(Event('cancel'));
+    expect(await result, isEmpty);
+  });
+
+  test('overlapping picks fail without orphaning the original request', () async {
+    final original = FilePickerPlatform.instance.pickFiles();
+    final input = document.querySelector('flt-file-picker-inputs input')!
+        as HTMLInputElement;
+
+    await expectLater(FilePickerPlatform.instance.pickFiles(), throwsStateError);
+    input.dispatchEvent(Event('cancel'));
+    expect(await original, isEmpty);
+  });
+
   test('picked files point at a readable blob: URL', () async {
     final files = await pickFiles([fileWith(name: 'a.txt', content: 'hello')]);
 
