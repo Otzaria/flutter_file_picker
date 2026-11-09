@@ -35,7 +35,6 @@ class FilePickerDarwin extends FilePickerPlatform {
   /// panels on macOS.
   final int? viewId;
 
-
   /// The method channel used to interact with the native platform.
   @visibleForTesting
   final methodChannel = const MethodChannel(

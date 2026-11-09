@@ -365,6 +365,21 @@ void main() {
       expect(receivedArguments?['initialDirectory'], '/Users/test/Projects');
     });
 
+    test('native directory cancellation stays null or empty', () async {
+      final picker = FilePickerDarwin();
+      final messenger =
+          TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
+      messenger.setMockMethodCallHandler(
+        picker.methodChannel,
+        (_) async => null,
+      );
+      addTearDown(
+        () => messenger.setMockMethodCallHandler(picker.methodChannel, null),
+      );
+      expect(await picker.getDirectoryPath(), isNull);
+      expect(await picker.pickFileAndDirectoryPaths(), isEmpty);
+    });
+
     test('getDirectoryPath propagates failed entitlement checks', () async {
       final picker = FilePickerDarwin();
       TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
@@ -472,32 +487,29 @@ void main() {
       expect(result, ['/tmp/some_file.pdf', '/tmp/some_directory']);
     });
 
-    test(
-      'pickFileAndDirectoryPaths propagates native failures',
-      () async {
-        final picker = FilePickerDarwin();
+    test('pickFileAndDirectoryPaths propagates native failures', () async {
+      final picker = FilePickerDarwin();
 
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(picker.methodChannel, (call) async {
+            throw PlatformException(code: 'error');
+          });
+      addTearDown(() {
         TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
-            .setMockMethodCallHandler(picker.methodChannel, (call) async {
-              throw PlatformException(code: 'error');
-            });
-        addTearDown(() {
-          TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
-              .setMockMethodCallHandler(picker.methodChannel, null);
-        });
+            .setMockMethodCallHandler(picker.methodChannel, null);
+      });
 
-        await expectLater(
-          picker.pickFileAndDirectoryPaths(),
-          throwsA(
-            isA<PlatformException>().having(
-              (error) => error.code,
-              'code',
-              'error',
-            ),
+      await expectLater(
+        picker.pickFileAndDirectoryPaths(),
+        throwsA(
+          isA<PlatformException>().having(
+            (error) => error.code,
+            'code',
+            'error',
           ),
-        );
-      },
-    );
+        ),
+      );
+    });
   });
 
   group('status updates', () {
