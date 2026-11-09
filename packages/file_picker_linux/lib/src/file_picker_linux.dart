@@ -286,8 +286,9 @@ class FilePickerLinux extends FilePickerPlatform {
     if (status == 1) return null;
     if (status != 0) {
       throw PlatformException(
-        code: 'portal_failed',
-        message: 'XDG Desktop Portal file chooser ended with status $status.',
+        code: 'portal_error',
+        message:
+            'The file chooser portal ended the request with status $status.',
       );
     }
     return results['uris']
