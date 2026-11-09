@@ -37,6 +37,17 @@ void main() {
   File fileWith({required String name, required String content}) =>
       File([utf8.encode(content).toJS].toJS, name);
 
+  test('selected files do not create a URL until a caller needs it', () async {
+    final files = await pickFiles([fileWith(name: 'book.pdf', content: 'data')]);
+    final file = files.single as WebPlatformFile;
+    expect(file.hasCreatedObjectUrl, isFalse);
+    expect(utf8.decode(await file.readAsBytes()), 'data');
+    expect(file.hasCreatedObjectUrl, isFalse);
+    expect(file.uri.scheme, 'blob');
+    expect(file.hasCreatedObjectUrl, isTrue);
+    file.releaseObjectUrl();
+  });
+
   test('picked files point at a readable blob: URL', () async {
     final files = await pickFiles([fileWith(name: 'a.txt', content: 'hello')]);
 
