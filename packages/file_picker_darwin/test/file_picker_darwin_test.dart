@@ -382,14 +382,14 @@ void main() {
 
     test('getDirectoryPath propagates failed entitlement checks', () async {
       final picker = FilePickerDarwin();
-      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
-          .setMockMethodCallHandler(picker.methodChannel, (call) async {
-            throw PlatformException(code: 'ENTITLEMENT_REQUIRED_WRITE');
-          });
-      addTearDown(() {
-        TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
-            .setMockMethodCallHandler(picker.methodChannel, null);
+      final messenger =
+          TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
+      messenger.setMockMethodCallHandler(picker.methodChannel, (call) async {
+        throw PlatformException(code: 'ENTITLEMENT_REQUIRED_WRITE');
       });
+      addTearDown(
+        () => messenger.setMockMethodCallHandler(picker.methodChannel, null),
+      );
 
       await expectLater(
         picker.getDirectoryPath(),
