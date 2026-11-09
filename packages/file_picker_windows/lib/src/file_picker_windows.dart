@@ -106,7 +106,6 @@ class FilePickerWindows extends FilePickerPlatform {
     } finally {
       onFileLoading?.call(FilePickerStatus.done);
     }
-
   }
 
   @override
@@ -258,7 +257,6 @@ class FilePickerWindows extends FilePickerPlatform {
     } finally {
       onFileSaving?.call(FilePickerStatus.done);
     }
-
   }
 
   /// Opens the [IFileOpenDialog] to select one or more files.
