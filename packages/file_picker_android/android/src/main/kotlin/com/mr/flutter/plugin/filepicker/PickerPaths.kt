@@ -52,8 +52,9 @@ internal object PickerPaths {
 
     private fun cachedFileWithKey(cacheDir: File, key: String, fileName: String?): File {
         val root = File(cacheDir, "file_picker").canonicalFile
-        val file = File(root, "$key/${fileName ?: "unamed"}").canonicalFile
-        return file.takeIf { it.path.startsWith(root.path + File.separator) }
+        val directory = File(root, key).canonicalFile
+        val file = File(directory, fileName ?: "unamed").canonicalFile
+        return file.takeIf { directory.parentFile == root && it.parentFile == directory }
             ?: throw SecurityException("Path traversal detected. Escaping the intended cache directory is not allowed.")
     }
 
