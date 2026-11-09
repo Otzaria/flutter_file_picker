@@ -5,6 +5,7 @@ import 'dart:io';
 import 'package:dbus/dbus.dart';
 import 'package:file_picker_platform_interface/file_picker_platform_interface.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 
 import 'file_picker_linux_options.dart';
 import 'filters.dart';
@@ -276,15 +277,19 @@ class FilePickerLinux extends FilePickerPlatform {
     };
   }
 
-  /// The file paths in a portal response, or `null` if [status] says the
-  /// user cancelled (1) or the request failed (2).
+  /// The file paths in a portal response. A user cancellation (1) returns
+  /// `null`; other abnormal terminations (2 or unknown) throw an error.
   @visibleForTesting
   static List<String>? pathsFromResponse(
     int status,
     Map<String, DBusValue> results,
   ) {
+    if (status == 1) return null;
     if (status != 0) {
-      return null;
+      throw PlatformException(
+        code: 'portal_failed',
+        message: 'XDG Desktop Portal file chooser ended with status $status.',
+      );
     }
     return results['uris']
             ?.asArray()
