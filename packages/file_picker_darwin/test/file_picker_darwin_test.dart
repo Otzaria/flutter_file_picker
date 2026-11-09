@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:cross_file/cross_file.dart';
@@ -489,6 +490,54 @@ void main() {
       });
 
       expect(await picker.pickFiles(onFileLoading: (_) {}), isEmpty);
+    });
+
+    test('pickFile reports done on cancellation and platform errors', () async {
+      var shouldFail = false;
+      messenger.setMockMethodCallHandler(picker.methodChannel, (call) async {
+        if (shouldFail) {
+          throw PlatformException(code: 'pick_failed');
+        }
+        return null;
+      });
+
+      final statuses = <FilePickerStatus>[];
+      expect(await picker.pickFiles(onFileLoading: statuses.add), isEmpty);
+      expect(statuses.last, FilePickerStatus.done);
+
+      shouldFail = true;
+      await expectLater(
+        picker.pickFile(onFileLoading: statuses.add),
+        throwsA(isA<PlatformException>()),
+      );
+      expect(statuses.last, FilePickerStatus.done);
+    });
+
+    test('independent picker requests finish their own callbacks', () async {
+      final firstResponse = Completer<List<Map<Object?, Object?>>?>();
+      final secondResponse = Completer<List<Map<Object?, Object?>>?>();
+      var nextCall = 0;
+      messenger.setMockMethodCallHandler(picker.methodChannel, (call) {
+        return nextCall++ == 0 ? firstResponse.future : secondResponse.future;
+      });
+
+      final firstStatuses = <FilePickerStatus>[];
+      final secondStatuses = <FilePickerStatus>[];
+      final first = FilePickerDarwin(viewId: 1).pickFiles(
+        onFileLoading: firstStatuses.add,
+      );
+      final second = FilePickerDarwin(viewId: 2).pickFiles(
+        onFileLoading: secondStatuses.add,
+      );
+
+      firstResponse.complete(null);
+      expect(await first, isEmpty);
+      expect(firstStatuses.last, FilePickerStatus.done);
+      expect(secondStatuses, isEmpty);
+
+      secondResponse.complete(null);
+      expect(await second, isEmpty);
+      expect(secondStatuses.last, FilePickerStatus.done);
     });
 
     test('saveFile reports done when saving fails', () async {
