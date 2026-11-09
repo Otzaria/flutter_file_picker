@@ -85,19 +85,21 @@ class FilePickerWindows extends FilePickerPlatform {
     try {
       final resolved = _resolveWindowsOptions(windowsOptions);
 
-      final fileNames = await compute(
-        _callPickFiles,
-        OpenSaveFileArgs(
-          dialogTitle: dialogTitle,
-          initialDirectory: initialDirectory,
-          type: type,
-          allowedExtensions: allowedExtensions,
-          allowMultiple: allowMultiple,
-          lockParentWindow: resolved.lockParentWindow,
-          parentWindowHandle: resolved.parentWindowHandle,
-          acceptLabel: resolved.acceptLabel,
-        ),
-      ) ?? <String>[];
+      final fileNames =
+          await compute(
+            _callPickFiles,
+            OpenSaveFileArgs(
+              dialogTitle: dialogTitle,
+              initialDirectory: initialDirectory,
+              type: type,
+              allowedExtensions: allowedExtensions,
+              allowMultiple: allowMultiple,
+              lockParentWindow: resolved.lockParentWindow,
+              parentWindowHandle: resolved.parentWindowHandle,
+              acceptLabel: resolved.acceptLabel,
+            ),
+          ) ??
+          <String>[];
       if (fileNames.isEmpty) {
         return [];
       }
