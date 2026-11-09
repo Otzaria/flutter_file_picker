@@ -85,7 +85,7 @@ class FilePickerDelegate(
                     mimeType = saveMimeType
                 )
                 Handler(Looper.getMainLooper()).post {
-                    finishWithSuccess(renamedUri.path)
+                    finishWithSuccess(renamedUri.toString())
                 }
             } catch (e: Exception) {
                 // Not only IOException: a SecurityException from the provider
@@ -177,5 +177,9 @@ class FilePickerDelegate(
 
     private fun clearPendingResult() {
         pendingResult = null
+        // The delegate outlives each export; release the complete byte payload.
+        bytes = null
+        saveFileName = null
+        saveMimeType = null
     }
 }

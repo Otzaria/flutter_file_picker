@@ -27,7 +27,9 @@ base class AndroidPlatformFile extends PlatformFile {
         ? rawName
         : (path.isNotEmpty ? p.basename(path) : '');
 
-    if (path.isEmpty && data['uri'] == null) {
+    final String? originalUri = (data['uri'] ?? data['identifier']) as String?;
+    if (path.isEmpty &&
+        (originalUri == null || originalUri.isEmpty || originalUri == 'null')) {
       throw ArgumentError(
         'path or uri cannot be empty when creating AndroidPlatformFile',
       );
@@ -38,7 +40,9 @@ base class AndroidPlatformFile extends PlatformFile {
       );
     }
 
-    final Uri uri = path.contains('://')
+    final Uri uri = path.isEmpty
+        ? Uri.parse(originalUri!)
+        : path.contains('://')
         ? (Uri.tryParse(path) ?? Uri.file(path))
         : Uri.file(path);
 
@@ -81,14 +85,13 @@ base class AndroidPlatformFile extends PlatformFile {
   /// The size Android already reported for this file when it was picked.
   @override
   int? lengthSync() {
-    final len = _bytesLength;
-    return (len != null && len > 0) ? len : null;
+    return _bytesLength;
   }
 
   @override
   Future<int?> length() async {
     final len = _bytesLength;
-    if (len != null && len > 0) return len;
+    if (len != null) return len;
     try {
       return await xFile.length();
     } catch (_) {
