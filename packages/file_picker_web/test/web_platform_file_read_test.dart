@@ -17,6 +17,31 @@ void main() {
   WebPlatformFile fileAt(String url) =>
       WebPlatformFile(name: 'a.txt', uri: Uri.parse(url));
 
+  test('native browser File supports direct reads without an object URL', () async {
+    final native = File([content.toJS].toJS, 'lazy.txt');
+    final file = WebPlatformFile(
+      name: native.name,
+      sourceFile: native,
+      bytesLength: native.size,
+    );
+
+    expect(file.hasCreatedObjectUrl, isFalse);
+    expect(await file.readAsBytes(), content);
+    final chunks = await file.readAsByteStream().toList();
+    expect(chunks.expand((chunk) => chunk).toList(), content);
+    expect(file.hasCreatedObjectUrl, isFalse);
+
+    final firstUri = file.uri;
+    expect(firstUri.scheme, 'blob');
+    expect(file.hasCreatedObjectUrl, isTrue);
+    file.releaseObjectUrl();
+    expect(file.hasCreatedObjectUrl, isFalse);
+    expect(await file.readAsBytes(), content);
+    final nextUri = file.uri;
+    expect(nextUri, isNot(firstUri));
+    file.releaseObjectUrl();
+  });
+
   test('readAsBytes() reads a blob URL', () async {
     final url = createBlobUrl();
     addTearDown(() => URL.revokeObjectURL(url));
