@@ -198,8 +198,8 @@ void main() {
       final messenger =
           TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
       messenger.setMockMethodCallHandler(picker.methodChannel, (call) async {
-            throw PlatformException(code: 'permission_denied');
-          });
+        throw PlatformException(code: 'permission_denied');
+      });
       addTearDown(
         () => messenger.setMockMethodCallHandler(picker.methodChannel, null),
       );
@@ -218,10 +218,11 @@ void main() {
 
     test('unknown_path still returns null', () async {
       final picker = FilePickerAndroid();
-      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
-          .setMockMethodCallHandler(picker.methodChannel, (call) async {
-            throw PlatformException(code: 'unknown_path');
-          });
+      final messenger =
+          TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
+      messenger.setMockMethodCallHandler(picker.methodChannel, (call) async {
+        throw PlatformException(code: 'unknown_path');
+      });
       addTearDown(
         () => messenger.setMockMethodCallHandler(picker.methodChannel, null),
       );
