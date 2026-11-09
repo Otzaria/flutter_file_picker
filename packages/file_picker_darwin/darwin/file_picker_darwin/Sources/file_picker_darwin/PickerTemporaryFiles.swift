@@ -19,7 +19,7 @@ enum PickerTemporaryFiles {
             isDirectory: true
         )
     ) -> URL {
-        let safeName = URL(fileURLWithPath: fileName).lastPathComponent
+        let safeName = fileName.isEmpty ? "" : URL(fileURLWithPath: fileName).lastPathComponent
         let name = safeName.isEmpty || safeName == "." || safeName == ".."
             ? "document"
             : safeName
