@@ -5,10 +5,7 @@ import java.io.FileOutputStream
 import java.io.IOException
 import java.io.OutputStream
 
-/**
- * Closes every output stream and removes incomplete image data if compression
- * fails or a document provider reports an I/O failure.
- */
+// Never retain partial image data after an encoder or I/O failure.
 internal object CompressedBitmapWriter {
     @Throws(IOException::class)
     fun write(target: File, compress: (OutputStream) -> Boolean) {
@@ -19,7 +16,7 @@ internal object CompressedBitmapWriter {
                 }
                 output.flush()
             }
-        } catch (failure: Exception) {
+        } catch (failure: Throwable) {
             target.delete()
             throw failure
         }

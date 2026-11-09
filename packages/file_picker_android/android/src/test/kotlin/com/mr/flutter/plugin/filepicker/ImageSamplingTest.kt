@@ -29,6 +29,21 @@ class ImageSamplingTest {
     }
 
     @Test
+    fun dimensionsJustAboveSampledLimitNeedTheNextPowerOfTwo() {
+        assertEquals(4, ImageSampling.forMaximumDimension(8193, 500, 4096))
+        assertEquals(4, ImageSampling.forMaximumDimension(500, 8193, 4096))
+        assertEquals(8, ImageSampling.forMaximumDimension(16385, 500, 4096))
+        assertEquals(524288, ImageSampling.forMaximumDimension(Int.MAX_VALUE, 1, 4096))
+    }
+
+    @Test
+    fun impossibleSampleSizeDoesNotOverflow() {
+        assertThrows(IllegalArgumentException::class.java) {
+            ImageSampling.forMaximumDimension(Int.MAX_VALUE, 1, 1)
+        }
+    }
+
+    @Test
     fun invalidDimensionsAvoidDivisionByZeroAndRejectInvalidLimit() {
         assertEquals(1, ImageSampling.forMaximumDimension(0, 0, 4096))
         assertEquals(1, ImageSampling.forMaximumDimension(-1, 5000, 4096))
