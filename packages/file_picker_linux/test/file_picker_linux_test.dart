@@ -239,11 +239,13 @@ void main() {
       expect(
         () => FilePickerLinux.pathsFromResponse(2, {}),
         throwsA(
-          isA<PlatformException>().having(
-            (error) => error.code,
-            'code',
-            'portal_failed',
-          ),
+          isA<PlatformException>()
+              .having((error) => error.code, 'code', 'portal_error')
+              .having(
+                (error) => error.message,
+                'message',
+                'The file chooser portal ended the request with status 2.',
+              ),
         ),
       );
     });
