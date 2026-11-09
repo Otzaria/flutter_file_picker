@@ -184,9 +184,12 @@ class FilePickerAndroid extends FilePickerPlatform {
         print(
           '[$_tag] Could not resolve directory path. Maybe it\'s a protected one or unsupported (such as Downloads folder). Make sure that you are on SDK 21 or above.',
         );
+        return null;
       }
+      // A native permission, activity or provider failure is not a
+      // cancellation. Propagate it so the application can report the cause.
+      rethrow;
     }
-    return null;
   }
 
   /// Recovers the files picked before Android destroyed the activity, or the
