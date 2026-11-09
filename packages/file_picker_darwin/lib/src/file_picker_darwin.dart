@@ -194,8 +194,8 @@ class FilePickerDarwin extends FilePickerPlatform {
     WindowsOptions windowsOptions = const WindowsOptions(),
     LinuxOptions linuxOptions = const LinuxOptions(),
     WebOptions webOptions = const WebOptions(),
-  }) async {
-    return await methodChannel.invokeMethod<String>('dir', {
+  }) {
+    return methodChannel.invokeMethod<String>('dir', {
       'viewId': ?viewId,
       'dialogTitle': dialogTitle,
       'initialDirectory': initialDirectory,

@@ -75,11 +75,12 @@ void main() {
     test('saveFile preserves content URIs and converts plain paths', () async {
       final picker = FilePickerAndroid();
       var value = 'content://com.android.providers.documents/document/42';
-      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
-          .setMockMethodCallHandler(picker.methodChannel, (call) async {
-            expect(call.method, 'save');
-            return value;
-          });
+      final messenger =
+          TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
+      messenger.setMockMethodCallHandler(picker.methodChannel, (call) async {
+        expect(call.method, 'save');
+        return value;
+      });
       addTearDown(
         () => TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
             .setMockMethodCallHandler(picker.methodChannel, null),
@@ -192,33 +193,28 @@ void main() {
       });
     });
 
-    test(
-      'directory permission errors propagate instead of cancelling',
-      () async {
-        final picker = FilePickerAndroid();
-        TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
-            .setMockMethodCallHandler(picker.methodChannel, (call) async {
-              throw PlatformException(code: 'permission_denied');
-            });
-        addTearDown(
-          () => TestDefaultBinaryMessengerBinding
-              .instance
-              .defaultBinaryMessenger
-              .setMockMethodCallHandler(picker.methodChannel, null),
-        );
+    test('directory permission errors propagate', () async {
+      final picker = FilePickerAndroid();
+      final messenger =
+          TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
+      messenger.setMockMethodCallHandler(picker.methodChannel, (call) async {
+        throw PlatformException(code: 'permission_denied');
+      });
+      addTearDown(
+        () => messenger.setMockMethodCallHandler(picker.methodChannel, null),
+      );
 
-        await expectLater(
-          picker.getDirectoryPath(),
-          throwsA(
-            isA<PlatformException>().having(
-              (error) => error.code,
-              'code',
-              'permission_denied',
-            ),
+      await expectLater(
+        picker.getDirectoryPath(),
+        throwsA(
+          isA<PlatformException>().having(
+            (error) => error.code,
+            'code',
+            'permission_denied',
           ),
-        );
-      },
-    );
+        ),
+      );
+    });
 
     test('directory cancellation stays null', () async {
       final picker = FilePickerAndroid();
@@ -262,15 +258,15 @@ void main() {
       },
     );
 
-    test('unknown_path retains the existing recoverable null result', () async {
+    test('unknown_path still returns null', () async {
       final picker = FilePickerAndroid();
-      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
-          .setMockMethodCallHandler(picker.methodChannel, (call) async {
-            throw PlatformException(code: 'unknown_path');
-          });
+      final messenger =
+          TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
+      messenger.setMockMethodCallHandler(picker.methodChannel, (call) async {
+        throw PlatformException(code: 'unknown_path');
+      });
       addTearDown(
-        () => TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
-            .setMockMethodCallHandler(picker.methodChannel, null),
+        () => messenger.setMockMethodCallHandler(picker.methodChannel, null),
       );
 
       expect(await picker.getDirectoryPath(), isNull);
