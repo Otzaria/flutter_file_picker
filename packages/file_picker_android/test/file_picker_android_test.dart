@@ -65,7 +65,8 @@ void main() {
 
     test('AndroidPlatformFile rejects an absent original URI', () {
       expect(
-        () => AndroidPlatformFile.fromMap({'name': 'bad', 'identifier': 'null'}),
+        () =>
+            AndroidPlatformFile.fromMap({'name': 'bad', 'identifier': 'null'}),
         throwsArgumentError,
       );
     });
@@ -79,9 +80,7 @@ void main() {
             return value;
           });
       addTearDown(
-        () => TestDefaultBinaryMessengerBinding
-            .instance
-            .defaultBinaryMessenger
+        () => TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
             .setMockMethodCallHandler(picker.methodChannel, null),
       );
 
@@ -100,7 +99,7 @@ void main() {
         mimeType: 'application/pdf',
       );
       expect(local?.scheme, 'file');
-      expect(local?.toFilePath(), value);
+      expect(local, Uri.file(value));
     });
 
     test('AndroidPlatformFile.lengthSync() reflects the reported size', () {
