@@ -29,11 +29,9 @@ class FilePickerAndroid extends FilePickerPlatform {
     'miguelruivo.flutter.plugins.filepickerevent',
   );
 
-  // receiveBroadcastStream installs a messenger-level handler. Reusing one
-  // shared stream prevents overlapping picker windows/operations from
-  // replacing or removing each other's handler.
-  static final Stream<dynamic> _statusEvents =
-      _sharedEventChannel.receiveBroadcastStream();
+  // Share the messenger handler so overlapping calls cannot remove it.
+  static final Stream<dynamic> _statusEvents = _sharedEventChannel
+      .receiveBroadcastStream();
 
   @visibleForTesting
   final eventChannel = _sharedEventChannel;
@@ -274,8 +272,8 @@ class FilePickerAndroid extends FilePickerPlatform {
       return Uri.tryParse(savedPath) ?? Uri.file(savedPath);
     } finally {
       // Also when saving fails, so the app does not stay in the picking state.
-      onFileSaving?.call(FilePickerStatus.done);
       await eventSubscription?.cancel();
+      onFileSaving?.call(FilePickerStatus.done);
     }
   }
 
