@@ -261,12 +261,6 @@ class FilePickerWeb extends FilePickerPlatform {
     LinuxOptions linuxOptions = const LinuxOptions(),
     WebOptions webOptions = const WebOptions(),
   }) async {
-    if (bytes.isEmpty) {
-      throw ArgumentError(
-        'The bytes are required when saving a file on the web.',
-      );
-    }
-
     if (fileName.isEmpty) {
       throw ArgumentError(
         'A file name is required when saving a file on the web.',
@@ -279,30 +273,35 @@ class FilePickerWeb extends FilePickerPlatform {
       );
     }
 
-    if (webOptions is FilePickerWebOptions &&
-        webOptions.saveMode == WebSaveFileMode.dialog) {
-      final dialog = await saveWithDialog(
-        fileName: fileName,
-        bytes: bytes,
-        mimeType: mimeType,
-      );
-      if (dialog.shown) {
-        final name = dialog.name;
-        return name == null ? null : Uri(path: name);
+    onFileSaving?.call(FilePickerStatus.picking);
+    try {
+      if (webOptions is FilePickerWebOptions &&
+          webOptions.saveMode == WebSaveFileMode.dialog) {
+        final dialog = await saveWithDialog(
+          fileName: fileName,
+          bytes: bytes,
+          mimeType: mimeType,
+        );
+        if (dialog.shown) {
+          final name = dialog.name;
+          return name == null ? null : Uri(path: name);
+        }
       }
+
+      final blob = Blob([bytes.toJS].toJS, BlobPropertyBag(type: mimeType));
+      final url = URL.createObjectURL(blob);
+
+      HTMLAnchorElement()
+        ..href = url
+        ..target = 'blank'
+        ..download = fileName
+        ..click();
+
+      URL.revokeObjectURL(url);
+      return null;
+    } finally {
+      onFileSaving?.call(FilePickerStatus.done);
     }
-
-    final blob = Blob([bytes.toJS].toJS, BlobPropertyBag(type: mimeType));
-    final url = URL.createObjectURL(blob);
-
-    HTMLAnchorElement()
-      ..href = url
-      ..target = 'blank'
-      ..download = fileName
-      ..click();
-
-    URL.revokeObjectURL(url);
-    return null;
   }
 
   /// Converts a [FileType] enum and [allowedExtensions] list into an HTML
