@@ -241,10 +241,31 @@ void main() {
 
       expect(media, hasLength(1));
       expect(media.single.name, 'Images and videos');
-      expect(media.single.pattern.split(';').toSet(), {
+      final patterns = media.single.pattern.split(';');
+      expect(patterns, hasLength(patterns.toSet().length));
+      expect(patterns.toSet(), {
         ...images.single.pattern.split(';'),
         ...videos.single.pattern.split(';'),
       });
+    });
+
+    test('video type keeps its own label and excludes image extensions', () {
+      expect(FilePickerWindows.fileTypeFilterSpecs(FileType.video, null), [
+        (
+          name: 'Videos (*.avi,*.flv,*.mkv,*.mov,*.mp4,*.mpeg,*.webm,*.wmv)',
+          pattern: '*.avi;*.flv;*.mkv;*.mov;*.mp4;*.mpeg;*.webm;*.wmv',
+        ),
+      ]);
+    });
+
+    test('allowed extensions affect custom filters, not media presets', () {
+      expect(
+        FilePickerWindows.fileTypeFilterSpecs(FileType.media, ['pdf']),
+        FilePickerWindows.fileTypeFilterSpecs(FileType.media, null),
+      );
+      expect(FilePickerWindows.fileTypeFilterSpecs(FileType.custom, ['pdf']), [
+        (name: 'Files (*.pdf)', pattern: '*.pdf'),
+      ]);
     });
   });
 }

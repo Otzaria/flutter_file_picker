@@ -526,9 +526,8 @@ class FilePickerWindows extends FilePickerPlatform {
           pattern: '*.bmp;*.gif;*.jpeg;*.jpg;*.png;*.webp',
         ),
       ],
-      // One filter is required for a combined image/video selection. With
-      // two separate IFileDialog filters, Windows exposes a dropdown where
-      // selecting "Images" hides videos and vice versa.
+      // Windows displays only the active filter, so separate image/video
+      // filters cannot show both kinds together.
       FileType.media => const [
         (
           name: 'Images and videos',
