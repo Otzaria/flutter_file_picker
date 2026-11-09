@@ -25,11 +25,18 @@ class FilePickerAndroid extends FilePickerPlatform {
   );
 
   /// The event channel used to receive real-time updates from the native platform.
-  @visibleForTesting
-  final eventChannel = const EventChannel(
+  static const EventChannel _sharedEventChannel = EventChannel(
     'miguelruivo.flutter.plugins.filepickerevent',
   );
 
+  // receiveBroadcastStream installs a messenger-level handler. Reusing one
+  // shared stream prevents overlapping picker windows/operations from
+  // replacing or removing each other's handler.
+  static final Stream<dynamic> _statusEvents =
+      _sharedEventChannel.receiveBroadcastStream();
+
+  @visibleForTesting
+  final eventChannel = _sharedEventChannel;
 
   @override
   Future<PlatformFile?> pickFile({
@@ -99,7 +106,7 @@ class FilePickerAndroid extends FilePickerPlatform {
 
     try {
       if (onFileLoading != null) {
-        eventSubscription = eventChannel.receiveBroadcastStream().listen(
+        eventSubscription = _statusEvents.listen(
           (data) {
             if (data is! bool) return;
             onFileLoading(
@@ -242,7 +249,7 @@ class FilePickerAndroid extends FilePickerPlatform {
     try {
       if (onFileSaving != null) {
         onFileSaving(FilePickerStatus.picking);
-        eventSubscription = eventChannel.receiveBroadcastStream().listen(
+        eventSubscription = _statusEvents.listen(
           (data) {
             if (data is! bool) return;
             onFileSaving(
