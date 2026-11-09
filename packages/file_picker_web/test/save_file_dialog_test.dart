@@ -181,7 +181,7 @@ void main() {
     expect(supportsShowSaveFileDialog, isTrue);
   });
 
-  test('allows downloading an empty file and completes saving status', () async {
+  test('empty downloads complete the saving status', () async {
     final statuses = <FilePickerStatus>[];
     final uri = await picker.saveFile(
       fileName: 'empty.txt',
