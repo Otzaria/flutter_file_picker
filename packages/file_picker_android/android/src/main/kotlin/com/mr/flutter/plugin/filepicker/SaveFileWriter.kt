@@ -3,11 +3,7 @@ package com.mr.flutter.plugin.filepicker
 import java.io.IOException
 import java.io.OutputStream
 
-/**
- * Writes the selected file's bytes to a document provider's output stream.
- * A null stream is a valid ContentResolver result and must never be reported
- * as a successful export.
- */
+// A provider may return no stream; that must fail the export.
 internal object SaveFileWriter {
     @Throws(IOException::class)
     fun write(stream: OutputStream?, bytes: ByteArray) {
