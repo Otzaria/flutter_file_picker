@@ -1,4 +1,4 @@
-import 'package:file_picker_web/file_picker_web.dart';
+import 'package:file_picker_web/src/file_picker_web_options.dart';
 import 'package:file_picker_web/src/preload_policy.dart';
 import 'package:flutter_test/flutter_test.dart';
 
