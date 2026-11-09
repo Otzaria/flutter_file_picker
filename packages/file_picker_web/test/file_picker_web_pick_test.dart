@@ -44,16 +44,19 @@ void main() {
     expect(utf8.decode(await files.single.readAsBytes()), 'hello');
   });
 
-  test('default lazy loading still supports readAsBytes after picking', () async {
-    final files = await pickFiles([
-      fileWith(name: 'chapter.txt', content: 'Large book contents'),
-    ]);
-    expect(files.single.lengthSync(), 'Large book contents'.length);
-    expect(
-      utf8.decode(await files.single.readAsBytes()),
-      'Large book contents',
-    );
-  });
+  test(
+    'default lazy loading still supports readAsBytes after picking',
+    () async {
+      final files = await pickFiles([
+        fileWith(name: 'chapter.txt', content: 'Large book contents'),
+      ]);
+      expect(files.single.lengthSync(), 'Large book contents'.length);
+      expect(
+        utf8.decode(await files.single.readAsBytes()),
+        'Large book contents',
+      );
+    },
+  );
 
   test('explicit eager loading remains supported for compatibility', () async {
     final files = await pickFiles(
