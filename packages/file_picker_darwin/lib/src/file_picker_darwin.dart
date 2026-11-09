@@ -51,7 +51,6 @@ class FilePickerDarwin extends FilePickerPlatform {
     'miguelruivo.flutter.plugins.filepickerevent',
   );
 
-  static StreamSubscription? _eventSubscription;
 
   @override
   Future<PlatformFile?> pickFile({
@@ -119,10 +118,11 @@ class FilePickerDarwin extends FilePickerPlatform {
     darwinOptions.validate(compressionQuality);
 
     final String typeName = type.name;
+    StreamSubscription<Object?>? eventSubscription;
 
     try {
       if (onFileLoading != null) {
-        _eventSubscription = eventChannel.receiveBroadcastStream().listen(
+        eventSubscription = eventChannel.receiveBroadcastStream().listen(
           (data) {
             if (data is! bool) return;
             onFileLoading(
@@ -161,8 +161,8 @@ class FilePickerDarwin extends FilePickerPlatform {
 
       return platformFiles;
     } finally {
-      await _eventSubscription?.cancel();
-      _eventSubscription = null;
+      await eventSubscription?.cancel();
+      onFileLoading?.call(FilePickerStatus.done);
     }
   }
 
@@ -260,11 +260,12 @@ class FilePickerDarwin extends FilePickerPlatform {
     // the bytes upfront to write a temp file before exporting it through
     // UIDocumentPickerViewController.
     final bool isMacOS = defaultTargetPlatform == TargetPlatform.macOS;
+    StreamSubscription<Object?>? eventSubscription;
 
     try {
       if (onFileSaving != null) {
         onFileSaving(FilePickerStatus.picking);
-        _eventSubscription = eventChannel.receiveBroadcastStream().listen(
+        eventSubscription = eventChannel.receiveBroadcastStream().listen(
           (data) {
             if (data is! bool) return;
             onFileSaving(
@@ -295,8 +296,7 @@ class FilePickerDarwin extends FilePickerPlatform {
     } finally {
       // Also when saving fails, so the app does not stay in the picking state.
       onFileSaving?.call(FilePickerStatus.done);
-      await _eventSubscription?.cancel();
-      _eventSubscription = null;
+      await eventSubscription?.cancel();
     }
   }
 }
