@@ -192,6 +192,49 @@ void main() {
       });
     });
 
+    test('directory permission errors propagate instead of cancelling', () async {
+      final picker = FilePickerAndroid();
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(picker.methodChannel, (call) async {
+            throw PlatformException(code: 'permission_denied');
+          });
+      addTearDown(
+        () => TestDefaultBinaryMessengerBinding.instance
+            .defaultBinaryMessenger.setMockMethodCallHandler(
+              picker.methodChannel,
+              null,
+            ),
+      );
+
+      await expectLater(
+        picker.getDirectoryPath(),
+        throwsA(
+          isA<PlatformException>().having(
+            (error) => error.code,
+            'code',
+            'permission_denied',
+          ),
+        ),
+      );
+    });
+
+    test('unknown_path retains the existing recoverable null result', () async {
+      final picker = FilePickerAndroid();
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(picker.methodChannel, (call) async {
+            throw PlatformException(code: 'unknown_path');
+          });
+      addTearDown(
+        () => TestDefaultBinaryMessengerBinding.instance
+            .defaultBinaryMessenger.setMockMethodCallHandler(
+              picker.methodChannel,
+              null,
+            ),
+      );
+
+      expect(await picker.getDirectoryPath(), isNull);
+    });
+
     group('status updates', () {
       late FilePickerAndroid picker;
       final messenger =
