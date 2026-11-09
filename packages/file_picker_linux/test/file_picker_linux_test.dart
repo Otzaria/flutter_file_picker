@@ -1,10 +1,10 @@
 import 'dart:convert';
-import 'dart:typed_data';
 
 import 'package:dbus/dbus.dart';
 
 import 'package:file_picker_linux/file_picker_linux.dart';
 import 'package:file_picker_platform_interface/file_picker_platform_interface.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
@@ -235,8 +235,26 @@ void main() {
       );
     });
 
-    test('returns null when the request fails', () {
-      expect(FilePickerLinux.pathsFromResponse(2, {}), isNull);
+    test('propagates portal failures instead of pretending cancellation', () {
+      expect(
+        () => FilePickerLinux.pathsFromResponse(2, {}),
+        throwsA(
+          isA<PlatformException>()
+              .having((error) => error.code, 'code', 'portal_error')
+              .having(
+                (error) => error.message,
+                'message',
+                'The file chooser portal ended the request with status 2.',
+              ),
+        ),
+      );
+    });
+
+    test('rejects unknown portal status values', () {
+      expect(
+        () => FilePickerLinux.pathsFromResponse(99, {}),
+        throwsA(isA<PlatformException>()),
+      );
     });
   });
 
