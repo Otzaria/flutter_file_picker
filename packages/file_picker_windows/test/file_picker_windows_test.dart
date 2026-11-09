@@ -1,4 +1,3 @@
-import 'dart:isolate';
 import 'dart:typed_data';
 
 import 'package:file_picker_platform_interface/file_picker_platform_interface.dart';
@@ -82,15 +81,12 @@ void main() {
 
   group('resolveDefaultExtension', () {
     final picker = FilePickerWindows();
-    final port = ReceivePort();
-    tearDownAll(port.close);
 
     OpenSaveFileArgs args({
       List<String>? allowedExtensions,
       String? defaultFileName,
     }) {
       return OpenSaveFileArgs(
-        port: port.sendPort,
         allowedExtensions: allowedExtensions,
         defaultFileName: defaultFileName,
       );
