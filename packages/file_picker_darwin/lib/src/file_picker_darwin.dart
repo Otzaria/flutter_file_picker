@@ -35,7 +35,6 @@ class FilePickerDarwin extends FilePickerPlatform {
   /// panels on macOS.
   final int? viewId;
 
-
   /// The method channel used to interact with the native platform.
   @visibleForTesting
   final methodChannel = const MethodChannel(
@@ -195,8 +194,8 @@ class FilePickerDarwin extends FilePickerPlatform {
     WindowsOptions windowsOptions = const WindowsOptions(),
     LinuxOptions linuxOptions = const LinuxOptions(),
     WebOptions webOptions = const WebOptions(),
-  }) async {
-    return await methodChannel.invokeMethod<String>('dir', {
+  }) {
+    return methodChannel.invokeMethod<String>('dir', {
       'viewId': ?viewId,
       'dialogTitle': dialogTitle,
       'initialDirectory': initialDirectory,
