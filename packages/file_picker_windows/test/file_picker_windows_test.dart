@@ -228,18 +228,23 @@ void main() {
       ]);
     });
 
-    test('media type produces separate video and image specs', () {
-      final specs = FilePickerWindows.fileTypeFilterSpecs(FileType.media, null);
-      expect(specs, [
-        (
-          name: 'Videos (*.avi,*.flv,*.mkv,*.mov,*.mp4,*.mpeg,*.webm,*.wmv)',
-          pattern: '*.avi;*.flv;*.mkv;*.mov;*.mp4;*.mpeg;*.webm;*.wmv',
-        ),
-        (
-          name: 'Images (*.bmp,*.gif,*.jpeg,*.jpg,*.png)',
-          pattern: '*.bmp;*.gif;*.jpeg;*.jpg;*.png',
-        ),
-      ]);
+    test('media type combines all image and video extensions', () {
+      final media = FilePickerWindows.fileTypeFilterSpecs(FileType.media, null);
+      final images = FilePickerWindows.fileTypeFilterSpecs(
+        FileType.image,
+        null,
+      );
+      final videos = FilePickerWindows.fileTypeFilterSpecs(
+        FileType.video,
+        null,
+      );
+
+      expect(media, hasLength(1));
+      expect(media.single.name, 'Images and videos');
+      expect(media.single.pattern.split(';').toSet(), {
+        ...images.single.pattern.split(';'),
+        ...videos.single.pattern.split(';'),
+      });
     });
   });
 }
