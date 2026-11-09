@@ -27,8 +27,7 @@ base class AndroidPlatformFile extends PlatformFile {
         ? rawName
         : (path.isNotEmpty ? p.basename(path) : '');
 
-    final String? originalUri =
-        (data['uri'] ?? data['identifier']) as String?;
+    final String? originalUri = (data['uri'] ?? data['identifier']) as String?;
     if (path.isEmpty &&
         (originalUri == null || originalUri.isEmpty || originalUri == 'null')) {
       throw ArgumentError(
