@@ -38,7 +38,9 @@ void main() {
       File([utf8.encode(content).toJS].toJS, name);
 
   test('selected files do not create a URL until a caller needs it', () async {
-    final files = await pickFiles([fileWith(name: 'book.pdf', content: 'data')]);
+    final files = await pickFiles([
+      fileWith(name: 'book.pdf', content: 'data'),
+    ]);
     final file = files.single as WebPlatformFile;
     expect(file.hasCreatedObjectUrl, isFalse);
     expect(utf8.decode(await file.readAsBytes()), 'data');
