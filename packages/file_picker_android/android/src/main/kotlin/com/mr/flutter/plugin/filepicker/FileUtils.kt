@@ -642,9 +642,8 @@ object FileUtils {
     }
 
     /**
-     * Calculates the largest power-of-two [BitmapFactory.Options.inSampleSize]
-     * that keeps both dimensions at least as large as the requested size, as
-     * recommended by https://developer.android.com/topic/performance/graphics/load-bitmap.
+     * Calculates the smallest power-of-two [BitmapFactory.Options.inSampleSize]
+     * that bounds both decoded dimensions, including highly asymmetric images.
      */
     private fun calculateInSampleSize(
         options: BitmapFactory.Options,
