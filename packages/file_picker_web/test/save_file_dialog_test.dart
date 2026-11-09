@@ -193,7 +193,7 @@ void main() {
   });
 
   test(
-    'allows downloading an empty file and completes saving status',
+    'empty downloads complete the saving status',
     () async {
       final statuses = <FilePickerStatus>[];
       final uri = await picker.saveFile(
