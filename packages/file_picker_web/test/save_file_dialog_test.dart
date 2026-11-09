@@ -192,22 +192,19 @@ void main() {
     expect(supportsShowSaveFileDialog, isTrue);
   });
 
-  test(
-    'empty downloads complete the saving status',
-    () async {
-      final statuses = <FilePickerStatus>[];
-      final uri = await picker.saveFile(
-        fileName: 'empty.txt',
-        bytes: Uint8List(0),
-        mimeType: 'text/plain',
-        onFileSaving: statuses.add,
-      );
+  test('empty downloads complete the saving status', () async {
+    final statuses = <FilePickerStatus>[];
+    final uri = await picker.saveFile(
+      fileName: 'empty.txt',
+      bytes: Uint8List(0),
+      mimeType: 'text/plain',
+      onFileSaving: statuses.add,
+    );
 
-      expect(uri, isNull);
-      expect(downloads, ['empty.txt']);
-      expect(statuses, [FilePickerStatus.picking, FilePickerStatus.done]);
-    },
-  );
+    expect(uri, isNull);
+    expect(downloads, ['empty.txt']);
+    expect(statuses, [FilePickerStatus.picking, FilePickerStatus.done]);
+  });
 
   test('writes an empty file through the native browser dialog', () async {
     final handle = _FakeFileHandle('empty.txt');
