@@ -1,13 +1,6 @@
 package com.mr.flutter.plugin.filepicker
 
-/**
- * Builds Android's MIME filters without hiding valid but unrecognized file
- * extensions. The system picker accepts MIME types, not file extensions:
- * if even one requested extension cannot be mapped, applying only the known
- * types would silently make the other files invisible.
- *
- * Kept free of Android dependencies for deterministic JVM testing.
- */
+// Partial MIME filters hide unmapped extensions, so use a wildcard if any mapping is missing.
 internal object MimeFilterPolicy {
     private const val ANY_MIME_TYPE = "*/*"
     private const val CSV_EXTENSION = "csv"
@@ -24,7 +17,7 @@ internal object MimeFilterPolicy {
         val mimes = linkedSetOf<String>()
         for (requested in allowedExtensions) {
             val extension = FileExtension.normalize(requested)
-            if (extension.isEmpty()) return arrayListOf(ANY_MIME_TYPE)
+            if (extension.isBlank()) return arrayListOf(ANY_MIME_TYPE)
 
             val mime = mimeForExtension(extension)
             if (extension == CSV_EXTENSION) {

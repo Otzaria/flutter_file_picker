@@ -36,11 +36,7 @@ import java.util.Locale
 object FileUtils {
     private const val TAG = "FilePickerUtils"
     private const val MAX_RENAME_ATTEMPTS = 20
-    // On Android, the CSV mime type from getMimeTypeFromExtension() returns
-    // "text/comma-separated-values" which is non-standard and doesn't filter
-    // CSV files in Google Drive.
-    // (see https://developer.mozilla.org/en-US/docs/Web/HTTP/Basics_of_HTTP/MIME_types/Common_types)
-    // (see https://android.googlesource.com/platform/frameworks/base/+/61ae88e/core/java/android/webkit/MimeTypeMap.java#439)
+    // Google Drive needs text/csv rather than Android's text/comma-separated-values.
     private const val CSV_EXTENSION = "csv"
     private const val CSV_MIME_TYPE = "text/csv"
     // Fallback MIME type used when neither the file name extension nor
