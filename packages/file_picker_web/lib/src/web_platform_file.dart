@@ -166,11 +166,14 @@ base class WebPlatformFile extends PlatformFile {
   @override
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
-    return other is WebPlatformFile && other.name == name && other.uri == uri;
+    return other is WebPlatformFile &&
+        other.name == name &&
+        (other._explicitUri ?? other._sourceFile) ==
+            (_explicitUri ?? _sourceFile);
   }
 
   @override
-  int get hashCode => Object.hash(name, uri);
+  int get hashCode => Object.hash(name, _explicitUri ?? _sourceFile);
 
   @override
   String toString() {
