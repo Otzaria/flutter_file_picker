@@ -37,6 +37,33 @@ void main() {
   File fileWith({required String name, required String content}) =>
       File([utf8.encode(content).toJS].toJS, name);
 
+  test('media picks use a valid comma-separated accept filter', () async {
+    final result = FilePickerPlatform.instance.pickFiles(type: FileType.media);
+    final input =
+        document.querySelector('flt-file-picker-inputs input')!
+            as HTMLInputElement;
+    expect(input.accept, 'video/*,image/*');
+    input.dispatchEvent(Event('cancel'));
+    expect(await result, isEmpty);
+  });
+
+  test(
+    'overlapping picks fail without orphaning the original request',
+    () async {
+      final original = FilePickerPlatform.instance.pickFiles();
+      final input =
+          document.querySelector('flt-file-picker-inputs input')!
+              as HTMLInputElement;
+
+      await expectLater(
+        FilePickerPlatform.instance.pickFiles(),
+        throwsStateError,
+      );
+      input.dispatchEvent(Event('cancel'));
+      expect(await original, isEmpty);
+    },
+  );
+
   test('selected files do not create a URL until a caller needs it', () async {
     final files = await pickFiles([
       fileWith(name: 'book.pdf', content: 'data'),
@@ -55,6 +82,29 @@ void main() {
 
     expect(files.single.uri.scheme, 'blob');
     expect(utf8.decode(await files.single.readAsBytes()), 'hello');
+  });
+
+  test(
+    'default lazy loading still supports readAsBytes after picking',
+    () async {
+      final files = await pickFiles([
+        fileWith(name: 'chapter.txt', content: 'Large book contents'),
+      ]);
+      expect(files.single.lengthSync(), 'Large book contents'.length);
+      expect(
+        utf8.decode(await files.single.readAsBytes()),
+        'Large book contents',
+      );
+    },
+  );
+
+  test('explicit eager loading remains supported for compatibility', () async {
+    final files = await pickFiles(
+      [fileWith(name: 'eager.txt', content: 'eager')],
+      // ignore: deprecated_member_use_from_same_package
+      webOptions: const FilePickerWebOptions(withData: true),
+    );
+    expect(utf8.decode(await files.single.readAsBytes()), 'eager');
   });
 
   test('an empty picked file still gets a blob: URL', () async {
