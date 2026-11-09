@@ -177,5 +177,12 @@ class FilePickerDelegate(
 
     private fun clearPendingResult() {
         pendingResult = null
+        // MethodChannel supplies the complete exported file as a ByteArray.
+        // It can be hundreds of MB. Keeping it on the delegate after save,
+        // failure or cancellation retains the entire allocation until the
+        // next save or Activity teardown.
+        bytes = null
+        saveFileName = null
+        saveMimeType = null
     }
 }
