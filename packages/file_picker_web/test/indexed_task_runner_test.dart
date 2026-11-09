@@ -73,8 +73,12 @@ void main() {
 
     test('rejects a non-positive concurrency limit', () async {
       await expectLater(
-        runIndexedTasks<int>(2, (index) async => index,
-            sequential: false, maxConcurrent: 0),
+        runIndexedTasks<int>(
+          2,
+          (index) async => index,
+          sequential: false,
+          maxConcurrent: 0,
+        ),
         throwsArgumentError,
       );
     });

@@ -11,7 +11,11 @@ Future<List<T>> runIndexedTasks<T>(
   int maxConcurrent = 2,
 }) async {
   if (maxConcurrent < 1) {
-    throw ArgumentError.value(maxConcurrent, 'maxConcurrent', 'Must be positive');
+    throw ArgumentError.value(
+      maxConcurrent,
+      'maxConcurrent',
+      'Must be positive',
+    );
   }
   if (length == 0) return [];
 
