@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'dart:math';
 
 import 'package:dbus/dbus.dart';
 import 'package:file_picker_platform_interface/file_picker_platform_interface.dart';
@@ -21,6 +22,17 @@ class FilePickerLinux extends FilePickerPlatform {
 
   static const String destination = 'org.freedesktop.portal.Desktop';
   static int _nextRequestToken = 0;
+  static final Random _secureRandom = Random.secure();
+
+  // The portal spec requires request tokens to be unique and unguessable.
+  // A random 128-bit suffix plus a process-local counter avoids collisions.
+  static String _newHandleToken() {
+    final randomSuffix = List.generate(
+      4,
+      (_) => _secureRandom.nextInt(1 << 32).toRadixString(16).padLeft(8, '0'),
+    ).join();
+    return 'flutter_picker_${_nextRequestToken++}_$randomSuffix';
+  }
 
   DBusClient? _client;
   OrgFreedesktopPortalFileChooser? _xdpChooser;
@@ -224,7 +236,7 @@ class FilePickerLinux extends FilePickerPlatform {
     String? initialDirectory,
   ) {
     return {
-      'handle_token': DBusString('flutter_picker_${_nextRequestToken++}'),
+      'handle_token': DBusString(_newHandleToken()),
       'modal': DBusBoolean(options.lockParentWindow),
       if (initialDirectory != null)
         // The portal expects a null terminated byte string.
