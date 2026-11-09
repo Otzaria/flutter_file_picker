@@ -305,7 +305,7 @@ object FileUtils {
                 return CSV_MIME_TYPE
             }
             MimeTypeMap.getSingleton()
-                .getMimeTypeFromExtension(extension.lowercase(Locale.getDefault()))
+                .getMimeTypeFromExtension(FileExtension.normalize(extension))
                 ?.let { return it }
 
             // The extension is unknown to the device's MimeTypeMap (e.g. a
@@ -508,20 +508,19 @@ object FileUtils {
 
         val mimes = ArrayList<String>()
 
-        for (i in allowedExtensions.indices) {
-            val mime = MimeTypeMap.getSingleton().getMimeTypeFromExtension(
-                allowedExtensions[i]
-            )
+        for (allowedExtension in allowedExtensions) {
+            val extension = FileExtension.normalize(allowedExtension)
+            val mime = MimeTypeMap.getSingleton().getMimeTypeFromExtension(extension)
             if (mime == null) {
                 Log.w(
                     TAG,
-                    "Custom file type '" + allowedExtensions[i] + "' has no known mime type and will not be filtered by the system picker."
+                    "Custom file type '$allowedExtension' has no known mime type and will not be filtered by the system picker."
                 )
                 continue
             }
 
             mimes.add(mime)
-            if(allowedExtensions[i] == CSV_EXTENSION) {
+            if (extension == CSV_EXTENSION) {
                 // Add the standard CSV mime type.
                 mimes.add(CSV_MIME_TYPE)
             }
@@ -591,7 +590,7 @@ object FileUtils {
 
     private fun getCompressFormat(context: Context, uri: Uri): Bitmap.CompressFormat {
         val format = getFileExtension(context, uri)
-        return when (format!!.uppercase(Locale.getDefault())) {
+        return when (format!!.uppercase(Locale.ROOT)) {
             "PNG" -> Bitmap.CompressFormat.PNG
             "WEBP" -> Bitmap.CompressFormat.WEBP
             else -> Bitmap.CompressFormat.JPEG
@@ -666,7 +665,7 @@ object FileUtils {
 
     @Throws(IOException::class)
     private fun createImageFile(context: Context, compressFormat: Bitmap.CompressFormat): File {
-        val timeStamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
+        val timeStamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.ROOT).format(Date())
         val imageFileName = "IMAGE_" + timeStamp + "_"
         val storageDir = context.cacheDir
         return File.createTempFile(imageFileName, "." + getCompressFormatBasedFileExtension(compressFormat), storageDir)
