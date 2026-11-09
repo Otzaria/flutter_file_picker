@@ -586,7 +586,7 @@ object FileUtils {
 
     private fun getCompressFormat(context: Context, uri: Uri): Bitmap.CompressFormat {
         val format = getFileExtension(context, uri)
-        return when (format!!.uppercase(Locale.ROOT)) {
+        return when (format?.uppercase(Locale.ROOT)) {
             "PNG" -> Bitmap.CompressFormat.PNG
             "WEBP" -> Bitmap.CompressFormat.WEBP
             else -> Bitmap.CompressFormat.JPEG
@@ -603,14 +603,13 @@ object FileUtils {
 
     @JvmStatic
     fun compressImage(originalImageUri: Uri, compressionQuality: Int, context: Context): Uri {
-        val compressedUri: Uri
         try {
-            // First pass: decode only the image bounds so a subsampling factor
-            // can be computed without loading the full bitmap into memory.
+            // Read dimensions without decoding the pixels into a bitmap.
             val boundsOptions = BitmapFactory.Options().apply { inJustDecodeBounds = true }
-            context.contentResolver.openInputStream(originalImageUri).use { imageStream ->
-                BitmapFactory.decodeStream(imageStream, null, boundsOptions)
-            }
+            val boundsStream = context.contentResolver.openInputStream(originalImageUri)
+                ?: throw IOException("Cannot open selected image: $originalImageUri")
+            boundsStream.use { BitmapFactory.decodeStream(it, null, boundsOptions) }
+
             val decodeOptions = BitmapFactory.Options().apply {
                 inSampleSize = calculateInSampleSize(
                     boundsOptions,
@@ -618,46 +617,43 @@ object FileUtils {
                     MAX_COMPRESSED_IMAGE_DIMENSION
                 )
             }
-            context.contentResolver.openInputStream(originalImageUri).use { imageStream ->
-                val compressFormat = getCompressFormat(context, originalImageUri)
-                val compressedFile = createImageFile(context, compressFormat)
-                val originalBitmap = BitmapFactory.decodeStream(imageStream, null, decodeOptions)
+
+            val imageStream = context.contentResolver.openInputStream(originalImageUri)
+                ?: throw IOException("Cannot reopen selected image: $originalImageUri")
+            return imageStream.use { input ->
+                val bitmap = BitmapFactory.decodeStream(input, null, decodeOptions)
                     ?: throw IOException("Failed to decode image: $originalImageUri")
-                // Compress and save the image
-                val fileOutputStream = FileOutputStream(compressedFile)
-                originalBitmap.compress(compressFormat, compressionQuality, fileOutputStream)
-                fileOutputStream.flush()
-                fileOutputStream.close()
-                compressedUri = Uri.fromFile(compressedFile)
+                try {
+                    val format = getCompressFormat(context, originalImageUri)
+                    val compressedFile = createImageFile(context, format)
+                    CompressedBitmapWriter.write(compressedFile) { output ->
+                        bitmap.compress(format, compressionQuality, output)
+                    }
+                    Uri.fromFile(compressedFile)
+                } finally {
+                    // Bitmap pixel storage can be many tens of MB; release it
+                    // promptly rather than retaining it until a later GC.
+                    bitmap.recycle()
+                }
             }
         } catch (e: IOException) {
             throw RuntimeException(e)
         }
-        return compressedUri
     }
 
     /**
-     * Calculates the largest power-of-two [BitmapFactory.Options.inSampleSize]
-     * that keeps both dimensions at least as large as the requested size, as
-     * recommended by https://developer.android.com/topic/performance/graphics/load-bitmap.
+     * Calculates the smallest power-of-two [BitmapFactory.Options.inSampleSize]
+     * that bounds both decoded dimensions, including highly asymmetric images.
      */
     private fun calculateInSampleSize(
         options: BitmapFactory.Options,
         reqWidth: Int,
         reqHeight: Int
-    ): Int {
-        val height = options.outHeight
-        val width = options.outWidth
-        var inSampleSize = 1
-        if (height > reqHeight || width > reqWidth) {
-            val halfHeight = height / 2
-            val halfWidth = width / 2
-            while (halfHeight / inSampleSize >= reqHeight && halfWidth / inSampleSize >= reqWidth) {
-                inSampleSize *= 2
-            }
-        }
-        return inSampleSize
-    }
+    ): Int = ImageSampling.forMaximumDimension(
+        options.outWidth,
+        options.outHeight,
+        minOf(reqWidth, reqHeight)
+    )
 
     @Throws(IOException::class)
     private fun createImageFile(context: Context, compressFormat: Bitmap.CompressFormat): File {
