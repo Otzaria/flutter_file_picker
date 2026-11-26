@@ -3,14 +3,25 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:file_picker_platform_interface/file_picker_platform_interface.dart';
+import 'package:windows_file_picker/src/file_picker_windows.dart'
+    show commonDialogOptions;
 import 'package:windows_file_picker/src/open_save_file_args.dart';
 import 'package:windows_file_picker/windows_file_picker.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:win32/win32.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   group('FilePickerWindows', () {
+    test('dialogs keep picked files out of the Windows recent list', () {
+      // Otherwise every imported or exported file shows up in the app's
+      // taskbar Jump List, under the process AppUserModelID.
+      expect(commonDialogOptions & FOS_DONTADDTORECENT, FOS_DONTADDTORECENT);
+      expect(commonDialogOptions & FOS_FORCEFILESYSTEM, FOS_FORCEFILESYSTEM);
+      expect(commonDialogOptions & FOS_NOCHANGEDIR, FOS_NOCHANGEDIR);
+    });
+
     test('registers instance', () {
       FilePickerWindows.registerWith();
       expect(FilePickerPlatform.instance, isA<FilePickerWindows>());
