@@ -11,6 +11,15 @@ import 'file_picker_windows_options.dart';
 import 'open_save_file_args.dart';
 import 'windows_platform_file.dart';
 
+/// Flags every picker dialog sets on top of its own: file-system items only,
+/// no change of the process working directory, and no entry in the Windows
+/// recent-documents list. Without [FOS_DONTADDTORECENT] Windows records every
+/// picked file under the process AppUserModelID, so imported and exported
+/// files show up in the app's taskbar Jump List.
+@visibleForTesting
+final int commonDialogOptions =
+    FOS_FORCEFILESYSTEM | FOS_NOCHANGEDIR | FOS_DONTADDTORECENT;
+
 /// An implementation of [FilePickerPlatform] for Windows.
 class FilePickerWindows extends FilePickerPlatform {
   /// Registers this class as the default instance of [FilePickerPlatform].
@@ -162,10 +171,7 @@ class FilePickerWindows extends FilePickerPlatform {
         final fileDialog = arena.com<IFileOpenDialog>(FileOpenDialog);
 
         final options =
-            fileDialog.getOptions() |
-            FOS_PICKFOLDERS |
-            FOS_FORCEFILESYSTEM |
-            FOS_NOCHANGEDIR;
+            fileDialog.getOptions() | FOS_PICKFOLDERS | commonDialogOptions;
         fileDialog.setOptions(FILEOPENDIALOGOPTIONS(options));
 
         fileDialog.setTitle(arena.pcwstr(dialogTitle ?? 'Select Folder'));
@@ -266,10 +272,7 @@ class FilePickerWindows extends FilePickerPlatform {
         final fileDialog = arena.com<IFileOpenDialog>(FileOpenDialog);
 
         var options =
-            fileDialog.getOptions() |
-            FOS_FORCEFILESYSTEM |
-            FOS_FILEMUSTEXIST |
-            FOS_NOCHANGEDIR;
+            fileDialog.getOptions() | FOS_FILEMUSTEXIST | commonDialogOptions;
         if (args.allowMultiple) {
           options |= FOS_ALLOWMULTISELECT;
         }
@@ -337,8 +340,7 @@ class FilePickerWindows extends FilePickerPlatform {
       return using((arena) {
         final fileDialog = arena.com<IFileSaveDialog>(FileSaveDialog);
 
-        var options =
-            fileDialog.getOptions() | FOS_FORCEFILESYSTEM | FOS_NOCHANGEDIR;
+        var options = fileDialog.getOptions() | commonDialogOptions;
         if (args.confirmOverwrite) {
           options |= FOS_OVERWRITEPROMPT;
         }
