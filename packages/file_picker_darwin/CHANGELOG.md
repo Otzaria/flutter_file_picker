@@ -1,3 +1,7 @@
+## 2.5.3-otzaria.1
+
+- Propagate native directory and combined picker errors to callers.
+
 ## 2.5.2
 
 - Fixed `saveFile()` on iOS leaving its temporary export file behind after a save, a cancel or a failure. It is now deleted when the request ends, since the destination holds its own copy. [#2356](https://github.com/vicajilau/flutter_file_picker/issues/2356)
