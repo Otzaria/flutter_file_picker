@@ -1,3 +1,8 @@
+## 4.2.3-otzaria.1
+
+- Read browser files on demand and create object URLs lazily.
+- Bound explicitly requested eager reads while preserving selection order.
+
 ## 4.2.2
 
 - Documented in the README that `saveFile()` holds the whole file in memory, that Safari cannot save a file of 2 GiB or more, and how to run the WebAssembly build on Safari and Firefox. [#2354](https://github.com/vicajilau/flutter_file_picker/pull/2354)
