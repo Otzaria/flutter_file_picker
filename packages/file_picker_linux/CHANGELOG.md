@@ -1,3 +1,7 @@
+## 2.0.6-otzaria.1
+
+- Distinguish failed portal requests from user cancellation.
+
 ## 2.0.5
 
 - Fixed `FileType.media` not offering `.webp` images, which `FileType.image` already did. The media filter is now built from the image and video lists, so it can no longer drift from them. [#2360](https://github.com/vicajilau/flutter_file_picker/pull/2360)
