@@ -213,12 +213,12 @@ class FilePickerAndroid extends FilePickerPlatform {
         print(
           '[$_tag] Could not resolve directory path. Maybe it\'s a protected one or unsupported (such as Downloads folder). Make sure that you are on SDK 21 or above.',
         );
+        return null;
       }
-      print(
-        '[$_tag] getDirectoryPath() failed with ${ex.code} (${ex.message}) and returns null, as for a cancel. Use pickDirectory() to get the error.',
-      );
+      // A native permission, activity or provider failure is not a
+      // cancellation. Propagate it so the application can report the cause.
+      rethrow;
     }
-    return null;
   }
 
   /// Recovers the files picked before Android destroyed the activity, or the
@@ -301,7 +301,10 @@ class FilePickerAndroid extends FilePickerPlatform {
           });
 
       if (savedPath == null) return null;
-      return Uri.tryParse(savedPath) ?? Uri.file(savedPath);
+      final savedUri = Uri.tryParse(savedPath);
+      return savedUri != null && savedUri.hasScheme
+          ? savedUri
+          : Uri.file(savedPath);
     } finally {
       // Also when saving fails, so the app does not stay in the picking state.
       await eventSubscription?.cancel();

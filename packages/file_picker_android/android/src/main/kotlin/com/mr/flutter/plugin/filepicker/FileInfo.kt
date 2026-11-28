@@ -57,7 +57,7 @@ class FileInfo(
         return hashMapOf<String, Any?>(
             Pair("path", path),
             Pair("name", name),
-            Pair("identifier", uri.toString()),
+            Pair("identifier", uri?.toString()),
             Pair("safHandle", safHandle)
         ).also { map ->
             // An unknown size is left out, so Dart reads it as null.

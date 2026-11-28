@@ -2,6 +2,7 @@ package com.mr.flutter.plugin.filepicker
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
 import org.junit.Test
 
 class FileInfoTest {
@@ -24,5 +25,12 @@ class FileInfoTest {
         val map = FileInfo.Builder().withName("game.mp4").withSize(null).build().toMap()
 
         assertFalse(map.containsKey("size"))
+    }
+
+    @Test
+    fun anAbsentIdentifierStaysNull() {
+        val map = FileInfo.Builder().withName("empty.txt").withUri(null).build().toMap()
+
+        assertNull(map["identifier"])
     }
 }

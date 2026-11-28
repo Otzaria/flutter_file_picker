@@ -36,11 +36,7 @@ import java.util.Locale
 object FileUtils {
     private const val TAG = "FilePickerUtils"
     private const val MAX_RENAME_ATTEMPTS = 20
-    // On Android, the CSV mime type from getMimeTypeFromExtension() returns
-    // "text/comma-separated-values" which is non-standard and doesn't filter
-    // CSV files in Google Drive.
-    // (see https://developer.mozilla.org/en-US/docs/Web/HTTP/Basics_of_HTTP/MIME_types/Common_types)
-    // (see https://android.googlesource.com/platform/frameworks/base/+/61ae88e/core/java/android/webkit/MimeTypeMap.java#439)
+    // Google Drive needs text/csv rather than Android's text/comma-separated-values.
     private const val CSV_EXTENSION = "csv"
     private const val CSV_MIME_TYPE = "text/csv"
     // Fallback MIME type used when neither the file name extension nor
@@ -48,12 +44,8 @@ object FileUtils {
     // most content-detection libraries for
     // unrecognized binary content.
     private const val DEFAULT_MIME_TYPE = "application/octet-stream"
-    // Maximum dimension (width or height) allowed when decoding an image for
-    // compression. Images larger than this are subsampled via
-    // BitmapFactory.Options.inSampleSize to avoid excessive memory usage
-    // (see https://developer.android.com/topic/performance/graphics/load-bitmap).
-    // 4096 matches the common GPU texture size limit, so regular photos are
-    // decoded at full resolution and only unusually large images are downscaled.
+    // Bound both decoded dimensions so panoramic images cannot bypass
+    // the memory limit through a short second edge.
     private const val MAX_COMPRESSED_IMAGE_DIMENSION = 4096
 
     fun FilePickerDelegate.processFiles(
@@ -500,42 +492,16 @@ object FileUtils {
     }
 
     fun getMimeTypes(allowedExtensions: ArrayList<String>?): ArrayList<String> {
-        if (allowedExtensions.isNullOrEmpty()) {
-            return ArrayList(listOf("*/*"))
+        val mimes = MimeFilterPolicy.resolve(allowedExtensions) { extension ->
+            MimeTypeMap.getSingleton().getMimeTypeFromExtension(extension)
         }
-
-        val mimes = ArrayList<String>()
-
-        for (allowedExtension in allowedExtensions) {
-            val extension = FileExtension.normalize(allowedExtension)
-            val mime = MimeTypeMap.getSingleton().getMimeTypeFromExtension(extension)
-            if (mime == null) {
-                Log.w(
-                    TAG,
-                    "Custom file type '$allowedExtension' has no known mime type and will not be filtered by the system picker."
-                )
-                continue
-            }
-
-            mimes.add(mime)
-            if (extension == CSV_EXTENSION) {
-                // Add the standard CSV mime type.
-                mimes.add(CSV_MIME_TYPE)
-            }
-        }
-
-        if (mimes.isEmpty()) {
+        if (!allowedExtensions.isNullOrEmpty() && mimes.size == 1 && mimes[0] == "*/*") {
             Log.w(
                 TAG,
-                "None of the custom file types $allowedExtensions have a known mime type, falling back to */*."
+                "Some custom file extensions cannot be mapped to MIME types. " +
+                    "Showing all files rather than hiding a supported extension: $allowedExtensions"
             )
-            return ArrayList(listOf("*/*"))
         }
-
-        Log.d(
-            TAG,
-            "Custom file types are $allowedExtensions. The mime types were detected as $mimes."
-        )
         return mimes
     }
 
@@ -636,8 +602,7 @@ object FileUtils {
     @JvmStatic
     fun compressImage(originalImageUri: Uri, compressionQuality: Int, context: Context): Uri {
         try {
-            // First pass: decode only the image bounds so a subsampling factor
-            // can be computed without loading the full bitmap into memory.
+            // Read dimensions without decoding the pixels into a bitmap.
             val boundsOptions = BitmapFactory.Options().apply { inJustDecodeBounds = true }
             val boundsStream = context.contentResolver.openInputStream(originalImageUri)
                 ?: throw IOException("Cannot open selected image: $originalImageUri")
@@ -675,27 +640,18 @@ object FileUtils {
     }
 
     /**
-     * Calculates the largest power-of-two [BitmapFactory.Options.inSampleSize]
-     * that keeps both dimensions at least as large as the requested size, as
-     * recommended by https://developer.android.com/topic/performance/graphics/load-bitmap.
+     * Calculates the smallest power-of-two [BitmapFactory.Options.inSampleSize]
+     * that bounds both decoded dimensions, including highly asymmetric images.
      */
     private fun calculateInSampleSize(
         options: BitmapFactory.Options,
         reqWidth: Int,
         reqHeight: Int
-    ): Int {
-        val height = options.outHeight
-        val width = options.outWidth
-        var inSampleSize = 1
-        if (height > reqHeight || width > reqWidth) {
-            val halfHeight = height / 2
-            val halfWidth = width / 2
-            while (halfHeight / inSampleSize >= reqHeight && halfWidth / inSampleSize >= reqWidth) {
-                inSampleSize *= 2
-            }
-        }
-        return inSampleSize
-    }
+    ): Int = ImageSampling.forMaximumDimension(
+        options.outWidth,
+        options.outHeight,
+        minOf(reqWidth, reqHeight)
+    )
 
     @Throws(IOException::class)
     private fun createImageFile(context: Context, compressFormat: Bitmap.CompressFormat): File {

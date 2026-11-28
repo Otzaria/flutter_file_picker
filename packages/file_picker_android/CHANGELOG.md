@@ -1,3 +1,9 @@
+## 2.2.3-otzaria.1
+
+- Preserve complete SAF URIs and nullable identifiers.
+- Preserve directory errors and mixed extension filters.
+- Keep decoded image dimensions within the configured bound.
+
 ## 2.2.2
 
 - Fixed a detached activity being kept in memory, because the plugin left its `EventChannel` handler and its references to the activity in place. [#2365](https://github.com/vicajilau/flutter_file_picker/pull/2365)
